@@ -16,7 +16,7 @@ make_n_random_spells = function( n ) {
 
 #Assign true class to given spell(s)
 true_spell_class = function( spell ) {
-  w = c(,-2,3,-4,5,-6,7,-8,9,-10,11,-12,13,-14,15,
+  w = c(1,-2,3,-4,5,-6,7,-8,9,-10,11,-12,13,-14,15,
         -16,17,-18,19,-20,21,-22,23,-24,25,-26)
 
   sign(spell %*% w - 27.5)
