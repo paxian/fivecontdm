@@ -11,6 +11,7 @@ make_n_random_spells = function( n ) {
   for( i in 1:n ) {
     r = rbind(r, make_one_spell())
   }
+  r
 }
 
 #Assign true class to given spell(s)
