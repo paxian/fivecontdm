@@ -1,6 +1,6 @@
-# install.packages('e1071') # <-- You need to do this in order to use SVM
-library(e1071) # Load the package with SVM implementation
+library(rpart)
 
+#Changed probability to 0.1 to simulate second student mining pattern.
 make_one_random_spell = function() {
   rbinom(26,1,0.1) #0.3
 }
@@ -20,59 +20,43 @@ true_spell_class = function(spell) {
   sign(spell %*% w - 27.5)
 }
 
-#BEGIN
-sauron_test = function() {
+sauron_test = function() {  
   # Sauron generates a dataset:
   spells = make_n_random_spells(20)
   c = true_spell_class(spells)
   
   # First student finds the majority class
-  majority_class = sign(sum(c) + 0.5)
+  majority_class = sign(sum(c) + 0.5)  
   
+  #Second student uses a Decision Tree  
+#   test = data.frame(make_n_random_spells(10))
+#   test$Sum <- rowSums(test)
+#   test$ID <- seq.int(nrow(test))
   
-  # Second student trains an SVM:
-  svm_model = svm(spells, c, type='C', kernel='linear')
-  
-  
-  #Second student uses a Decision Tree
-  library(rpart)
-  library("party") #install.packages("party")
-  
-  test = data.frame(make_n_random_spells(10))
-  test$Sum <- rowSums(test)
-  test$ID <- seq.int(nrow(test))
-  class(test)
-  
-  train = data.frame(make_n_random_spells(50))  #class(train) remove(train) ?plot
+  train = data.frame(make_n_random_spells(100))  
   train$Sum <- rowSums(train)
   train$Good <- 0
   train$Good[ train$Sum >= 2 ]  <- 1 
-  train$ID <- seq.int(nrow(train))
-  
-  dt_model1 <- ctree(Good~Sum, data=train)
-  print(dt_model1)
-  summary(dt_model1)
-  plot(dt_model1)
-  
-  #which(train$Good == 1)
-  my_prediction1 <- predict(dt_model1, test)
-  my_sol1 <- data.frame(ID = test$ID, Good = my_prediction1)
+  #train$ID <- seq.int(nrow(train))
   
   dt_model <- rpart(Good~Sum, data=train)
-  plot(dt_model)
-  my_prediction <- predict(dt_model, test)
-  my_sol <- data.frame(ID = test$ID, Good = my_prediction)
+  #my_prediction <- predict(dt_model, test)
+  #my_sol <- data.frame(ID = test$ID, Good = my_prediction)
   
-
   
   # Sauron generates a new example:
   test_example = make_one_random_spell()
+
+  # Sauron adapts same previous test_example for second student.
+  test_example4Second_Student  <-  data.frame(t(data.frame(test_example)))
+  test_example4Second_Student$Sum <- rowSums(test_example4Second_Student)
   
+
   # .. and tests each student's predictions:
   student1_correct = (majority_class == true_spell_class(test_example))
-  student2_correct = (predict(svm_model, t(test_example)) == true_spell_class(test_example))
-  
-  c(student1_correct, student2_correct)
+  student2_correct = (predict(dt_model, test_example4Second_Student) == true_spell_class(test_example))
+                      
+   c(student1_correct, student2_correct)
 }
 
 # Runs the sauron test many times
@@ -86,8 +70,8 @@ many_sauron_tests = function(n) {
   r
 }
 
-main = function() {
-  results = many_sauron_tests(1000)
+main = function(x) {
+  results = many_sauron_tests(x)
   
   # Analyze student's performance (expected generalization error):
   print("First student:")
@@ -99,25 +83,20 @@ main = function() {
   # These are the cases where student's predictions disagree:
   disagreements = results[which(results[,1] != results[,2]),]
   
-  #agreements = results[which(results[,1] == results[,2]),]
-  
   # How often is the first student correct?
   print("If students disagree, the first one will be correct with probability:")
   sum(disagreements[,1])/length(disagreements[,1])
 }
 
-main()
+x <- 2000
 
-#First point: How often would the first student guess correctly?
-#I will do a prop.table
+main(x)
 
-#class(results)  remove(disagreements) remove(results) remove(my_results)
-#results = many_sauron_tests(1000)
-my_results <- data.frame( many_sauron_tests(1500) )
-
-#
-prop.table(table(my_results$X1))
-prop.table(table(my_results$X2))
+# My extra chunk of code. // An alternative simplay way to test it.
+# my_results <- data.frame( many_sauron_tests(x) )
+# 
+# prop.table(table(my_results$X1))
+# prop.table(table(my_results$X2))
 
 
 
